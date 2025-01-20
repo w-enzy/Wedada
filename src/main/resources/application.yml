@@ -5,7 +5,7 @@
 
 spring:
   application:
-    name: yudada-backend
+    name: wedada-backend
   # 默认 dev 环境
   profiles:
     active: dev
@@ -23,7 +23,7 @@ spring:
   # todo 需替换配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/yudada
+    url: jdbc:mysql://localhost:3306/wedada
     username: root
     password: Unique5667
   # Redis 配置
@@ -75,4 +75,4 @@ knife4j:
       default:
         api-rule: package
         api-rule-resources:
-          - com.yupi.yudada.controller
+          - com.wenzy.wedada.controller
