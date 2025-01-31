@@ -65,7 +65,7 @@ public class App implements Serializable {
     private Date reviewTime;
 
     /**
-     * 创建用户 id
+     * 创建用户 id：userservice创建loginuser抓取默认填充值
      */
     private Long userId;
 

@@ -8,6 +8,7 @@ import org.springframework.beans.BeanUtils;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 题目视图
@@ -25,7 +26,7 @@ public class QuestionVO implements Serializable {
     /**
      * 题目内容（json格式）,转换为封装类(DTO数据传输对象)避免解析json时出现异常
      */
-    private QuestionContentDTO questionContent;
+    private List<QuestionContentDTO> questionContent;
 
     /**
      * 应用 id
@@ -64,7 +65,7 @@ public class QuestionVO implements Serializable {
         }
         Question question = new Question();
         BeanUtils.copyProperties(questionVO, question);     //将vo封装类中的属性值复制到对象question中
-        QuestionContentDTO questionContentDTO= questionVO.getQuestionContent();     //获取封装类中的questionContentDTO对象
+        List<QuestionContentDTO> questionContentDTO= questionVO.getQuestionContent();     //获取封装类中的questionContentDTO对象
         question.setQuestionContent(JSONUtil.toJsonStr(questionContentDTO));
         return question;
     }
@@ -83,7 +84,7 @@ public class QuestionVO implements Serializable {
         BeanUtils.copyProperties(question, questionVO);
         String questionContent = question.getQuestionContent();
         if(questionContent !=null) {
-            questionVO.setQuestionContent(JSONUtil.toBean(questionContent,QuestionContentDTO.class));
+            questionVO.setQuestionContent(JSONUtil.toList(questionContent,QuestionContentDTO.class));
         }
         return questionVO;
     }

@@ -2,22 +2,26 @@ package com.wenzy.wedada.controller;
 
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.wenzy.wedada.annotation.AuthCheck;
 import com.wenzy.wedada.common.BaseResponse;
 import com.wenzy.wedada.common.DeleteRequest;
 import com.wenzy.wedada.common.ErrorCode;
 import com.wenzy.wedada.common.ResultUtils;
+import com.wenzy.wedada.constant.UserConstant;
+import com.wenzy.wedada.exception.BusinessException;
+import com.wenzy.wedada.exception.ThrowUtils;
 import com.wenzy.wedada.model.dto.useranswer.UserAnswerAddRequest;
 import com.wenzy.wedada.model.dto.useranswer.UserAnswerEditRequest;
 import com.wenzy.wedada.model.dto.useranswer.UserAnswerQueryRequest;
 import com.wenzy.wedada.model.dto.useranswer.UserAnswerUpdateRequest;
+import com.wenzy.wedada.model.entity.App;
 import com.wenzy.wedada.model.entity.User;
 import com.wenzy.wedada.model.entity.UserAnswer;
+import com.wenzy.wedada.model.enums.ReviewStatusEnum;
 import com.wenzy.wedada.model.vo.UserAnswerVO;
+import com.wenzy.wedada.scoring.ScoringStrategyExecutor;
+import com.wenzy.wedada.service.AppService;
 import com.wenzy.wedada.service.UserAnswerService;
-import com.wenzy.wedada.annotation.AuthCheck;
-import com.wenzy.wedada.constant.UserConstant;
-import com.wenzy.wedada.exception.BusinessException;
-import com.wenzy.wedada.exception.ThrowUtils;
 import com.wenzy.wedada.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -42,7 +46,13 @@ public class UserAnswerController {
     private UserAnswerService useranswerService;
 
     @Resource
+    private AppService appService;
+
+    @Resource
     private UserService userService;
+
+    @Resource
+    private ScoringStrategyExecutor scoringStrategyExecutor;
 
     // region 增删改查
 
@@ -63,6 +73,13 @@ public class UserAnswerController {
         useranswer.setChoices(JSONUtil.toJsonStr(choices));
         // 数据校验
         useranswerService.validUserAnswer(useranswer, true);
+        // 判断app是否存在
+        Long appId = useranswerAddRequest.getAppId();
+        App app = appService.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR);
+        if (!ReviewStatusEnum.PASS.equals(ReviewStatusEnum.getEnumByValue(app.getReviewStatus()))) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "应用未通过审核，无法答题");
+        }
         // 填充默认值
         User loginUser = userService.getLoginUser(request);
         useranswer.setUserId(loginUser.getId());
@@ -71,6 +88,15 @@ public class UserAnswerController {
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         // 返回新写入的数据 id
         long newUserAnswerId = useranswer.getId();
+        // 调用评分模块
+        try {
+            UserAnswer userAnswerWithResult = scoringStrategyExecutor.doScore(choices, app);
+            userAnswerWithResult.setId(newUserAnswerId);
+            useranswerService.updateById(userAnswerWithResult);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new BusinessException(ErrorCode.OPERATION_ERROR,"评分失败");
+        }
         return ResultUtils.success(newUserAnswerId);
     }
 

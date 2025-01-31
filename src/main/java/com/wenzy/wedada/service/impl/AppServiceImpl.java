@@ -57,8 +57,8 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         String appName = app.getAppName();
         String appDesc = app.getAppDesc();
         Integer appType = app.getAppType();
-        Integer scoringStrategy = app.getScoringStrategy();
         Integer reviewStatus = app.getReviewStatus();
+        Integer scoringStrategy = app.getScoringStrategy();
         // 创建数据时，参数不能为空
         if (add) {
             // 补充校验规则
